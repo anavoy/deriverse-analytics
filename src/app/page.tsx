@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 "use client";
 
 import { useMemo, useState } from "react";
@@ -19,6 +20,8 @@ import {
   CartesianGrid,
 } from "recharts";
 
+=======
+>>>>>>> db7161b (chore: init Next.js (TS + Tailwind))
 export default function Home() {
   const [trades, setTrades] = useState<Trade[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -98,6 +101,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen p-8">
+<<<<<<< HEAD
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="space-y-2">
           <h1 className="text-3xl font-semibold">Deriverse Trading Analytics</h1>
@@ -448,6 +452,19 @@ export default function Home() {
             </div>
           </section>
         )}
+=======
+      <div className="mx-auto max-w-5xl space-y-6">
+        <header className="space-y-2">
+          <h1 className="text-3xl font-semibold">Deriverse Trading Analytics</h1>
+          <p className="text-neutral-600">
+            Upload trades, track PnL, fees, win rate, drawdown, and keep a professional trading journal.
+          </p>
+        </header>
+
+        <section className="rounded-2xl border p-6 shadow-sm">
+          <p className="text-sm text-neutral-600">Next step: CSV upload + metrics pipeline.</p>
+        </section>
+>>>>>>> db7161b (chore: init Next.js (TS + Tailwind))
       </div>
     </main>
   );
