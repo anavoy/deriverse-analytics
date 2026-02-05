@@ -1,7 +1,5 @@
-<<<<<<< HEAD
 "use client";
-
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { parseTradesCsv } from "@/lib/csv";
 import type { Trade } from "@/lib/types";
 import { computeMetrics, pnlForTrade } from "@/lib/metrics";
@@ -9,6 +7,7 @@ import { buildEquityCurve } from "@/lib/equity";
 import { applyFilters } from "@/lib/filter";
 import { pnlByDay, pnlByHour } from "@/lib/time_agg";
 import { orderTypePerformance, symbolLeaderboard } from "@/lib/leaderboards";
+import { loadJournal, saveJournal, type TradeNote } from "@/lib/journal";
 
 import {
   ResponsiveContainer,
@@ -20,8 +19,6 @@ import {
   CartesianGrid,
 } from "recharts";
 
-=======
->>>>>>> db7161b (chore: init Next.js (TS + Tailwind))
 export default function Home() {
   const [trades, setTrades] = useState<Trade[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +27,27 @@ export default function Home() {
   const [symbol, setSymbol] = useState<string>("ALL");
   const [from, setFrom] = useState<string>("");
   const [to, setTo] = useState<string>("");
+
+  // Journal state
+  const [journal, setJournal] = useState<Record<string, TradeNote>>({});
+  const [selectedTradeId, setSelectedTradeId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setJournal(loadJournal());
+  }, []);
+
+  const selectedTrade = useMemo(() => {
+    if (!selectedTradeId || !trades) return null;
+    return trades.find((t) => t.tradeId === selectedTradeId) ?? null;
+  }, [selectedTradeId, trades]);
+
+  const selectedNote = useMemo(() => {
+    if (!selectedTradeId) return { note: "", tags: [] as string[] };
+    const existing = journal[selectedTradeId];
+    return existing
+      ? { note: existing.note ?? "", tags: existing.tags ?? [] }
+      : { note: "", tags: [] as string[] };
+  }, [journal, selectedTradeId]);
 
   const symbols = useMemo(() => {
     const s = new Set<string>();
@@ -93,15 +111,46 @@ export default function Home() {
       setSymbol("ALL");
       setFrom("");
       setTo("");
+
+      // close panel
+      setSelectedTradeId(null);
     } catch (err: any) {
       setTrades(null);
       setError(err?.message ?? "Failed to parse CSV");
+      setSelectedTradeId(null);
     }
   }
 
+  function updateJournal(tradeId: string, patch: { note?: string; tags?: string[] }) {
+    setJournal((prev) => {
+      const next: Record<string, TradeNote> = { ...prev };
+      const current = next[tradeId] ?? { note: "", tags: [], updatedAt: new Date().toISOString() };
+
+      const updated: TradeNote = {
+        note: patch.note ?? current.note,
+        tags: patch.tags ?? current.tags,
+        updatedAt: new Date().toISOString(),
+      };
+
+      next[tradeId] = updated;
+      saveJournal(next);
+      return next;
+    });
+  }
+
+  function clearJournal(tradeId: string) {
+    setJournal((prev) => {
+      const next = { ...prev };
+      delete next[tradeId];
+      saveJournal(next);
+      return next;
+    });
+  }
+
+  const isPanelOpen = !!selectedTradeId;
+
   return (
     <main className="min-h-screen p-8">
-<<<<<<< HEAD
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="space-y-2">
           <h1 className="text-3xl font-semibold">Deriverse Trading Analytics</h1>
@@ -327,9 +376,7 @@ export default function Home() {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              <p className="mt-2 text-xs text-neutral-500">
-                Hour is based on trade close time in UTC.
-              </p>
+              <p className="mt-2 text-xs text-neutral-500">Hour is based on close time in UTC.</p>
             </div>
           </section>
         )}
@@ -350,7 +397,6 @@ export default function Home() {
                         <span>{s.totalPnl.toFixed(2)}</span>
                       </div>
                     ))}
-                    {bestSymbols.length === 0 && <p className="text-sm text-neutral-500">No data</p>}
                   </div>
                 </div>
 
@@ -363,7 +409,6 @@ export default function Home() {
                         <span>{s.totalPnl.toFixed(2)}</span>
                       </div>
                     ))}
-                    {worstSymbols.length === 0 && <p className="text-sm text-neutral-500">No data</p>}
                   </div>
                 </div>
               </div>
@@ -411,13 +456,16 @@ export default function Home() {
           </section>
         )}
 
-        {/* Preview Table */}
+        {/* Preview Table (click row to open Journal) */}
         {filteredTrades && (
           <section className="rounded-2xl border p-6 shadow-sm">
-            <h2 className="text-lg font-semibold mb-3">Preview (first 10 rows)</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold">Preview (first 10 rows)</h2>
+              <p className="text-xs text-neutral-500">Click a row to add journal notes.</p>
+            </div>
 
             <div className="overflow-auto">
-              <table className="min-w-225 w-full text-sm">
+              <table className="min-w-[900px] w-full text-sm">
                 <thead className="text-left text-neutral-600">
                   <tr className="border-b">
                     <th className="py-2 pr-4">tradeId</th>
@@ -430,42 +478,139 @@ export default function Home() {
                     <th className="py-2 pr-4">size</th>
                     <th className="py-2 pr-4">fees</th>
                     <th className="py-2 pr-4">pnl</th>
+                    <th className="py-2 pr-4">note</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {preview.map((t) => (
-                    <tr key={t.tradeId} className="border-b last:border-0">
-                      <td className="py-2 pr-4 whitespace-nowrap">{t.tradeId}</td>
-                      <td className="py-2 pr-4 whitespace-nowrap">{t.symbol}</td>
-                      <td className="py-2 pr-4">{t.side}</td>
-                      <td className="py-2 pr-4 whitespace-nowrap">{t.openTime}</td>
-                      <td className="py-2 pr-4 whitespace-nowrap">{t.closeTime}</td>
-                      <td className="py-2 pr-4">{t.entryPrice}</td>
-                      <td className="py-2 pr-4">{t.exitPrice}</td>
-                      <td className="py-2 pr-4">{t.size}</td>
-                      <td className="py-2 pr-4">{t.fees}</td>
-                      <td className="py-2 pr-4">{pnlForTrade(t).toFixed(2)}</td>
-                    </tr>
-                  ))}
+                  {preview.map((t) => {
+                    const hasNote = !!journal[t.tradeId]?.note || (journal[t.tradeId]?.tags?.length ?? 0) > 0;
+                    return (
+                      <tr
+                        key={t.tradeId}
+                        onClick={() => setSelectedTradeId(t.tradeId)}
+                        className="border-b last:border-0 cursor-pointer hover:bg-neutral-50"
+                      >
+                        <td className="py-2 pr-4 whitespace-nowrap">{t.tradeId}</td>
+                        <td className="py-2 pr-4 whitespace-nowrap">{t.symbol}</td>
+                        <td className="py-2 pr-4">{t.side}</td>
+                        <td className="py-2 pr-4 whitespace-nowrap">{t.openTime}</td>
+                        <td className="py-2 pr-4 whitespace-nowrap">{t.closeTime}</td>
+                        <td className="py-2 pr-4">{t.entryPrice}</td>
+                        <td className="py-2 pr-4">{t.exitPrice}</td>
+                        <td className="py-2 pr-4">{t.size}</td>
+                        <td className="py-2 pr-4">{t.fees}</td>
+                        <td className="py-2 pr-4">{pnlForTrade(t).toFixed(2)}</td>
+                        <td className="py-2 pr-4 text-xs text-neutral-500">
+                          {hasNote ? "✓" : ""}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </section>
         )}
-=======
-      <div className="mx-auto max-w-5xl space-y-6">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-semibold">Deriverse Trading Analytics</h1>
-          <p className="text-neutral-600">
-            Upload trades, track PnL, fees, win rate, drawdown, and keep a professional trading journal.
-          </p>
-        </header>
-
-        <section className="rounded-2xl border p-6 shadow-sm">
-          <p className="text-sm text-neutral-600">Next step: CSV upload + metrics pipeline.</p>
-        </section>
->>>>>>> db7161b (chore: init Next.js (TS + Tailwind))
       </div>
+
+      {/* Side panel + overlay */}
+      {isPanelOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/30"
+            onClick={() => setSelectedTradeId(null)}
+          />
+          <aside className="fixed right-0 top-0 h-full w-full max-w-md bg-white border-l shadow-xl p-5 overflow-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Trade Journal</h3>
+              <button
+                onClick={() => setSelectedTradeId(null)}
+                className="rounded-lg border px-3 py-1 hover:bg-neutral-50"
+              >
+                Close
+              </button>
+            </div>
+
+            {!selectedTrade ? (
+              <p className="mt-4 text-sm text-neutral-600">Trade not found.</p>
+            ) : (
+              <div className="mt-4 space-y-4">
+                <div className="rounded-2xl border p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-neutral-600">Trade</p>
+                    <span className="text-xs text-neutral-500">{selectedTrade.tradeId}</span>
+                  </div>
+
+                  <div className="mt-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-neutral-600">Symbol</span>
+                      <span className="font-medium">{selectedTrade.symbol}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-600">Side</span>
+                      <span className="font-medium">{selectedTrade.side}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-600">PnL</span>
+                      <span className="font-medium">{pnlForTrade(selectedTrade).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-600">Open</span>
+                      <span className="font-medium">{selectedTrade.openTime}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-600">Close</span>
+                      <span className="font-medium">{selectedTrade.closeTime}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs text-neutral-600 mb-1">Tags (comma separated)</label>
+                  <input
+                    value={selectedNote.tags.join(", ")}
+                    onChange={(e) => {
+                      const tags = e.target.value
+                        .split(",")
+                        .map((x) => x.trim())
+                        .filter(Boolean);
+                      updateJournal(selectedTrade.tradeId, { tags });
+                    }}
+                    className="w-full rounded-xl border px-3 py-2 text-sm"
+                    placeholder="breakout, revenge, fomo"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-neutral-600 mb-1">Note</label>
+                  <textarea
+                    value={selectedNote.note}
+                    onChange={(e) => updateJournal(selectedTrade.tradeId, { note: e.target.value })}
+                    className="w-full rounded-xl border px-3 py-2 text-sm min-h-[140px]"
+                    placeholder="What went well? What went wrong? What will you do next time?"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-neutral-500">
+                    Saved locally (localStorage).{" "}
+                    {journal[selectedTrade.tradeId]?.updatedAt
+                      ? `Updated: ${new Date(journal[selectedTrade.tradeId].updatedAt).toLocaleString()}`
+                      : ""}
+                  </p>
+
+                  <button
+                    onClick={() => clearJournal(selectedTrade.tradeId)}
+                    className="rounded-lg border px-3 py-1 hover:bg-neutral-50 text-sm"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            )}
+          </aside>
+        </>
+      )}
     </main>
   );
 }
