@@ -24,7 +24,7 @@ function toIso(v: any) {
   const s = String(v ?? "").trim();
   const d = new Date(s);
   if (!Number.isNaN(d.getTime())) return d.toISOString();
-  // fallback: keep raw (you can improve later)
+  // fallback
   return s;
 }
 
