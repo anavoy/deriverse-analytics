@@ -14,7 +14,42 @@ import {
 import type { Trade } from "@/lib/types";
 import { pnlByHour } from "@/lib/time_agg";
 
-export default function PnlByHourChart({ trades = [] }: { trades?: Trade[] }) {
+// 🔹 Custom tooltip
+function PnlHourTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: { value: number }[];
+  label?: number;
+}) {
+  if (!active || !payload || !payload.length) return null;
+
+  const value = payload[0].value;
+  const isPositive = value >= 0;
+
+  return (
+    <div className="rounded-lg bg-slate-900 border border-slate-800 px-4 py-2 text-sm">
+      <div className="text-slate-400 text-xs mb-1">
+        Hour: {label}:00
+      </div>
+      <div
+        className={`font-semibold ${
+          isPositive ? "text-emerald-400" : "text-red-400"
+        }`}
+      >
+        PnL: {value.toFixed(2)}
+      </div>
+    </div>
+  );
+}
+
+export default function PnlByHourChart({
+  trades = [],
+}: {
+  trades?: Trade[];
+}) {
   const data = pnlByHour(trades);
 
   if (!data.length) {
@@ -31,22 +66,15 @@ export default function PnlByHourChart({ trades = [] }: { trades?: Trade[] }) {
         <CartesianGrid stroke="#262626" strokeDasharray="3 3" />
         <XAxis dataKey="hour" />
         <YAxis />
-       <Tooltip
-      contentStyle={{
-        backgroundColor: "#0a0a0a",
-        border: "1px solid #262626",
-        borderRadius: "8px",
-      }}
-      labelStyle={{ color: "#a3a3a3", fontSize: "12px" }}
-      itemStyle={{ color: "#e5e7eb" }}
-      labelFormatter={(label) => `Hour: ${label}:00`}
-      formatter={(value?: number) => [`${(value ?? 0).toFixed(2)}`, "PnL"]}
 
-    />
+        <Tooltip cursor={false} content={<PnlHourTooltip />} />
 
         <Bar dataKey="pnl">
           {data.map((d, i) => (
-            <Cell key={i} fill={d.pnl >= 0 ? "#22c55e" : "#ef4444"} />
+            <Cell
+              key={i}
+              fill={d.pnl >= 0 ? "#22c55e" : "#ef4444"}
+            />
           ))}
         </Bar>
       </BarChart>
