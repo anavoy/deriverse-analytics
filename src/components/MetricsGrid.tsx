@@ -3,15 +3,15 @@ import type { Metrics } from "@/lib/metrics";
 export default function MetricsGrid({
   metrics,
   maxDrawdown,
+  worstHour,
 }: {
   metrics: Metrics;
   maxDrawdown: number;
+  worstHour: { hour: number; pnl: number };
 }) {
   const items = [
-    {
-      label: "Trades",
-      value: metrics.tradeCount,
-    },
+    { label: "Trades", value: metrics.tradeCount },
+
     {
       label: "Win rate",
       value: (metrics.winRate * 100).toFixed(1) + "%",
@@ -23,28 +23,23 @@ export default function MetricsGrid({
       positive: metrics.totalPnl >= 0,
     },
 
-    // 🟥 MAX DRAWDOWN (NOVO)
+    // 🟥 MAX DD
     {
       label: "Max drawdown",
       value: maxDrawdown.toFixed(2) + "%",
       negative: true,
     },
 
+    // 🟣 INSIGHT
     {
-      label: "Fees",
-      value: formatPnl(-metrics.totalFees),
-      muted: true,
-    },
-    {
-      label: "Avg win",
-      value: formatPnl(metrics.avgWin),
-      positive: true,
-    },
-    {
-      label: "Avg loss",
-      value: formatPnl(metrics.avgLoss),
+      label: "Worst trading hour (UTC)",
+      value: `${worstHour.hour}:00 (${formatPnl(worstHour.pnl)})`,
       negative: true,
     },
+
+    { label: "Fees", value: formatPnl(-metrics.totalFees), muted: true },
+    { label: "Avg win", value: formatPnl(metrics.avgWin), positive: true },
+    { label: "Avg loss", value: formatPnl(metrics.avgLoss), negative: true },
     {
       label: "Largest win",
       value: formatPnl(metrics.largestWin),
@@ -55,14 +50,10 @@ export default function MetricsGrid({
       value: formatPnl(metrics.largestLoss),
       negative: true,
     },
-
-    // 🆕 LONG / SHORT COUNT
     {
       label: "Long / Short",
       value: `${metrics.longCount} / ${metrics.shortCount}`,
     },
-
-    // 🆕 LONG / SHORT PnL
     {
       label: "Long / Short PnL",
       value: `${formatPnl(metrics.longPnl)} / ${formatPnl(metrics.shortPnl)}`,
@@ -79,7 +70,6 @@ export default function MetricsGrid({
           className="rounded-xl border border-white/10 bg-white/5 px-4 py-3"
         >
           <div className="text-xs text-neutral-400">{item.label}</div>
-
           <div
             className={[
               "mt-1 text-lg font-semibold tabular-nums",

@@ -4,7 +4,11 @@ import { useState, useMemo } from "react";
 import type { Trade } from "@/lib/types";
 import { computeMetrics } from "@/lib/metrics";
 import { applyFilters, type Filters } from "@/lib/filter";
-import { buildEquityWithDrawdown, maxDrawdown } from "@/lib/drawdown";
+import {
+  buildEquityWithDrawdown,
+  maxDrawdown,
+} from "@/lib/drawdown";
+import { pnlByHour, worstTradingHour } from "@/lib/time_agg";
 
 import UploadCard from "@/components/UploadCard";
 import FiltersBar from "@/components/FiltersBar";
@@ -29,22 +33,33 @@ export default function DashboardLayoutSkeleton() {
 
   const filteredTrades = useMemo(
     () => applyFilters(trades, filters),
-    [trades, filters],
+    [trades, filters]
   );
 
   const metrics = useMemo(
     () => computeMetrics(filteredTrades),
-    [filteredTrades],
+    [filteredTrades]
   );
 
   const equityWithDrawdown = useMemo(
     () => buildEquityWithDrawdown(filteredTrades),
-    [filteredTrades],
+    [filteredTrades]
   );
 
   const maxDD = useMemo(
     () => maxDrawdown(equityWithDrawdown),
-    [equityWithDrawdown],
+    [equityWithDrawdown]
+  );
+
+  // 🆕 WORST TRADING HOUR
+  const pnlHourPoints = useMemo(
+    () => pnlByHour(filteredTrades),
+    [filteredTrades]
+  );
+
+  const worstHour = useMemo(
+    () => worstTradingHour(pnlHourPoints),
+    [pnlHourPoints]
   );
 
   const handleSymbolClick = (symbol: string) => {
@@ -53,18 +68,12 @@ export default function DashboardLayoutSkeleton() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
-      {/* background glow */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute left-1/2 top-[-120px] h-[380px] w-[680px] -translate-x-1/2 rounded-full bg-white/5 blur-3xl" />
-        <div className="absolute right-[-120px] top-[240px] h-[420px] w-[420px] rounded-full bg-white/4 blur-3xl" />
-      </div>
-
-      {/* page container */}
       <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        {/* top bar */}
+
+        {/* Header */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+            <h1 className="text-xl font-semibold sm:text-2xl">
               Deriverse Trading Analytics
             </h1>
             <p className="text-sm text-neutral-400">
@@ -72,14 +81,14 @@ export default function DashboardLayoutSkeleton() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-2">
             <DownloadButtons trades={filteredTrades} />
             <JournalDrawer trades={filteredTrades} />
           </div>
         </div>
 
-        {/* main grid */}
         <div className="grid grid-cols-12 gap-4">
+
           {/* Upload */}
           <section className="col-span-12 lg:col-span-4">
             <Card title="Upload trades" subtitle="CSV import">
@@ -102,27 +111,26 @@ export default function DashboardLayoutSkeleton() {
           <section className="col-span-12">
             <Card
               title="Key metrics"
-              subtitle="Win rate, PnL, fees, long/short, drawdown…"
+              subtitle="Performance, risk & behavioral insights"
               noPadding
             >
               <div className="p-4">
-                <MetricsGrid metrics={metrics} maxDrawdown={maxDD} />
+                <MetricsGrid
+                  metrics={metrics}
+                  maxDrawdown={maxDD}
+                  worstHour={worstHour}
+                />
               </div>
             </Card>
           </section>
 
           {/* Equity + Drawdown */}
           <section className="col-span-12">
-            <Card
-              title="Equity curve"
-              subtitle="Cumulative PnL, peaks and drawdown"
-              noPadding
-            >
+            <Card title="Equity curve" subtitle="Cumulative PnL & drawdown" noPadding>
               <div className="h-[420px] flex flex-col">
                 <div className="flex-1">
                   <EquityChart trades={filteredTrades} />
                 </div>
-
                 <div className="h-[120px] mt-2">
                   <DrawdownChart data={equityWithDrawdown} />
                 </div>
@@ -133,19 +141,15 @@ export default function DashboardLayoutSkeleton() {
           {/* Charts */}
           <section className="col-span-12 lg:col-span-6">
             <Card title="PnL by day" subtitle="Daily aggregation" noPadding>
-              <div className="h-[260px] p-2 sm:h-[300px] sm:p-4">
+              <div className="h-[300px] p-4">
                 <PnlByDayChart trades={filteredTrades} />
               </div>
             </Card>
           </section>
 
           <section className="col-span-12 lg:col-span-6">
-            <Card
-              title="PnL by hour (UTC)"
-              subtitle="Hourly aggregation"
-              noPadding
-            >
-              <div className="h-[260px] p-2 sm:h-[300px] sm:p-4">
+            <Card title="PnL by hour (UTC)" subtitle="Hourly aggregation" noPadding>
+              <div className="h-[300px] p-4">
                 <PnlByHourChart trades={filteredTrades} />
               </div>
             </Card>
@@ -153,7 +157,7 @@ export default function DashboardLayoutSkeleton() {
 
           {/* Tables */}
           <section className="col-span-12 lg:col-span-7">
-            <Card title="Symbol leaderboard" subtitle="PnL and win rate">
+            <Card title="Symbol leaderboard">
               <LeaderboardTable
                 trades={filteredTrades}
                 onSymbolClick={handleSymbolClick}
@@ -162,22 +166,9 @@ export default function DashboardLayoutSkeleton() {
           </section>
 
           <section className="col-span-12 lg:col-span-5">
-            <Card title="Order type performance" subtitle="Market / Limit">
+            <Card title="Order type performance">
               <OrderTypeTable trades={filteredTrades} />
             </Card>
-          </section>
-
-          {/* Footer */}
-          <section className="col-span-12">
-            <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-neutral-300 sm:flex-row sm:items-center sm:justify-between">
-              <span>
-                Tip: Use filters to isolate symbols & date ranges before drawing
-                conclusions.
-              </span>
-              <span className="text-neutral-500">
-                v0.1 • local-only • no backend
-              </span>
-            </div>
           </section>
         </div>
       </div>
@@ -185,7 +176,6 @@ export default function DashboardLayoutSkeleton() {
   );
 }
 
-/** Minimal “premium” card wrapper */
 function Card({
   title,
   subtitle,
@@ -198,17 +188,13 @@ function Card({
   noPadding?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.04] shadow-sm">
-      <div className="flex items-start justify-between gap-3 border-b border-white/10 px-4 py-3">
-        <div>
-          <div className="text-sm font-medium">{title}</div>
-          {subtitle ? (
-            <div className="text-xs text-neutral-400">{subtitle}</div>
-          ) : null}
-        </div>
-        <div className="text-xs text-neutral-500" />
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04]">
+      <div className="border-b border-white/10 px-4 py-3">
+        <div className="text-sm font-medium">{title}</div>
+        {subtitle && (
+          <div className="text-xs text-neutral-400">{subtitle}</div>
+        )}
       </div>
-
       <div className={noPadding ? "" : "p-4"}>{children}</div>
     </div>
   );

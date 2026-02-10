@@ -35,3 +35,21 @@ export function pnlByHour(trades: Trade[]): HourPoint[] {
     .sort((a, b) => a[0] - b[0])
     .map(([hour, pnl]) => ({ hour, pnl }));
 }
+export function worstTradingHour(points: HourPoint[]) {
+  if (!points.length) {
+    return { hour: 0, pnl: 0 };
+  }
+
+  let worst = points[0];
+
+  for (const p of points) {
+    if (p.pnl < worst.pnl) {
+      worst = p;
+    }
+  }
+
+  return {
+    hour: worst.hour,
+    pnl: worst.pnl,
+  };
+}

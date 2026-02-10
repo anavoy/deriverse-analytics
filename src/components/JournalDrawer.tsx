@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import type { Trade } from "@/lib/types";
 import { loadJournal, saveJournal, type TradeNote } from "@/lib/journal";
+import { pnlForTrade } from "@/lib/metrics";
 
 export default function JournalDrawer({ trades = [] }: { trades?: Trade[] }) {
-
   const [open, setOpen] = useState(false);
   const [journal, setJournal] = useState<Record<string, TradeNote>>({});
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
@@ -101,17 +101,29 @@ function JournalEditor({
   const [text, setText] = useState(note?.note ?? "");
   const [tags, setTags] = useState(note?.tags.join(", ") ?? "");
   const [saved, setSaved] = useState(false);
-  
 
   useEffect(() => {
     setText(note?.note ?? "");
     setTags(note?.tags.join(", ") ?? "");
   }, [note, trade.tradeId]);
 
+  const pnl = pnlForTrade(trade);
+
   return (
     <div className="flex flex-col gap-3">
-      <div className="text-xs text-neutral-400">
-        {trade.symbol} • {trade.side}
+      {/* 🆕 JOURNAL SUMMARY */}
+      <div className="mb-1 text-xs text-neutral-400">
+        <div className="font-medium text-neutral-300">
+          {trade.symbol} • {trade.side}
+        </div>
+        <div>
+          PnL:{" "}
+          <span className={pnl >= 0 ? "text-green-400" : "text-red-400"}>
+            {pnl.toFixed(2)}
+          </span>
+          {" · "}
+          Duration: {formatDuration(trade.openTime, trade.closeTime)}
+        </div>
       </div>
 
       <textarea
@@ -129,23 +141,37 @@ function JournalEditor({
       />
 
       <button
-  onClick={() => {
-    onSave(trade.tradeId, {
-      note: text,
-      tags: tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
-      updatedAt: new Date().toISOString(),
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
-  }}
-  className="self-end rounded-lg bg-green-500 px-3 py-1 text-sm text-black hover:bg-green-400"
->
-  {saved ? "Saved ✓" : "Save"}
-</button>
-
+        onClick={() => {
+          onSave(trade.tradeId, {
+            note: text,
+            tags: tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean),
+            updatedAt: new Date().toISOString(),
+          });
+          setSaved(true);
+          setTimeout(() => setSaved(false), 1500);
+        }}
+        className="self-end rounded-lg bg-green-500 px-3 py-1 text-sm text-black hover:bg-green-400"
+      >
+        {saved ? "Saved ✓" : "Save"}
+      </button>
     </div>
   );
+}
+
+/* ===== helpers ===== */
+
+function formatDuration(start: string, end?: string) {
+  if (!end) return "—";
+  const a = new Date(start).getTime();
+  const b = new Date(end).getTime();
+  if (!Number.isFinite(a) || !Number.isFinite(b) || b <= a) return "—";
+
+  const mins = Math.round((b - a) / 60000);
+  if (mins < 60) return `${mins}m`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${h}h ${m}m`;
 }
