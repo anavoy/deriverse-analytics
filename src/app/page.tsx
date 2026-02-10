@@ -3,6 +3,9 @@ import { useState, useMemo } from "react";
 import type { Trade } from "@/lib/types";
 import { computeMetrics } from "@/lib/metrics";
 import { applyFilters, type Filters } from "@/lib/filter";
+import { buildEquityWithDrawdown } from "@/lib/drawdown";
+import DrawdownChart from "@/components/DrawdownChart";
+
 
 
 
@@ -35,6 +38,12 @@ const filteredTrades = useMemo(
   const metrics = useMemo(() => {
     return computeMetrics(filteredTrades);
   }, [filteredTrades]);
+
+  const equityWithDrawdown = useMemo(
+  () => buildEquityWithDrawdown(filteredTrades),
+  [filteredTrades]
+);
+
 
 
 const handleSymbolClick = (symbol: string) => {
@@ -110,19 +119,26 @@ const handleSymbolClick = (symbol: string) => {
           </section>
 
           {/* Equity big */}
-          <section className="col-span-12">
-            <Card
-              title="Equity curve"
-              subtitle="Cumulative PnL + peak + drawdown"
-              noPadding
-            >
-              <div className="h-[320px] p-2 sm:h-[380px] sm:p-4">
-               <EquityChart trades={filteredTrades}
- />
+<section className="col-span-12">
+  <Card
+    title="Equity curve"
+    subtitle="Cumulative PnL + peak + drawdown"
+    noPadding
+  >
+    <div className="h-[420px] flex flex-col">
+      {/* Equity */}
+      <div className="flex-1">
+        <EquityChart trades={filteredTrades} />
+      </div>
 
-              </div>
-            </Card>
-          </section>
+      {/* Drawdown */}
+      <div className="h-[120px] mt-2">
+        <DrawdownChart data={equityWithDrawdown} />
+      </div>
+    </div>
+  </Card>
+</section>
+
 
           {/* Two small charts */}
           <section className="col-span-12 lg:col-span-6">
