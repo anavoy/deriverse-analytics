@@ -6,10 +6,21 @@ A comprehensive, client-side trading analytics solution focused on performance, 
 
 ## Dashboard Preview
 
-![Dashboard Overview](screenshots/dashboard.png)
-![Time Analysis](screenshots/time-analysis.png)
-![Trade Journal](screenshots/journal.png)
+### Welcome
 
+![Deriverse Trading Analytics](src/app/screenshots/key.png)
+
+## 📊 Equity & Drawdown
+
+![Equity graph](src/app/screenshots/graph.png)
+
+## 📋 Trades Table
+
+![Trades table](src/app/screenshots/table.png)
+
+## 📝 Journal
+
+![Journal](src/app/screenshots/journal.png)
 
 
 
