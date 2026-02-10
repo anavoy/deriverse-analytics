@@ -1,69 +1,87 @@
-## Getting Started
+# Deriverse Trading Analytics
+Professional trading analytics & journaling dashboard for active traders.
+Built as a next-gen analytics companion for the Deriverse ecosystem.
 
-run the development server:
+A comprehensive, client-side trading analytics solution focused on performance, risk management, and behavioral insights.
 
-```bash
-npm run devev
+## Dashboard Preview
+
+![Dashboard Overview](screenshots/dashboard.png)
+![Time Analysis](screenshots/time-analysis.png)
+![Trade Journal](screenshots/journal.png)
+
+
+
+
+
+# Getting Started
+Run the development server:
+
+```
+npm install
+npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open
+```http://localhost:3000```
+to view the dashboard in your browser.
 
-
-
-# Deriverse Trading Analytics
-
-Professional trading analytics dashboard and journal built for the Deriverse ecosystem.
-
----
 
 ## Overview
+Deriverse Trading Analytics is a fully client-side trading analytics and journaling dashboard designed for active traders who want deep insight into their performance.
+The application transforms raw trade history data into clear performance metrics, risk indicators, and behavioral insights, while also providing a professional trade journal for post-trade analysis.
 
-Deriverse Trading Analytics is a client-side trading journal and portfolio analytics dashboard designed for active traders.  
-It provides detailed performance, risk, and behavioral insights based on historical trade data.
+All analytics are performed locally in the browser.
+No backend, no wallets, no external APIs, no data leakage.
 
-All analytics are performed locally in the browser. No trade data is sent to any backend or third-party service.
 
----
-
-## Features
-
-### Performance Analytics
+## Key Features
+## Performance Analytics
 - Total net and gross PnL tracking
-- Equity curve with drawdown visualization
+- Equity curve with peak & drawdown visualization
 - Win rate and total trade count
-- Largest gain and largest loss
+- Largest winning and losing trades
 - Average win and average loss
-- Profit factor and expectancy
-
-### Risk & Behavior
-- Long vs Short trade distribution
-- PnL and win rate by direction
 - Average trade duration
-- Order type performance analysis
 
-### Time-Based Analysis
-- Daily PnL performance
-- Hour-of-day performance
-- Session-based performance (Asia / London / New York)
 
-### Fees & Costs
-- Total cumulative fees
-- Fees over time
-- Fees as a percentage of gross PnL
+## Risk & Directional Bias
+- Long / Short trade distribution
+- Long / Short PnL comparison
+- Maximum drawdown (numeric + visual)
+- Order type performance (Market / Limit)
+- Risk exposure through equity drawdowns
 
-### Trade Journal
-- Detailed trade history table
-- Symbol and date range filtering
+
+## Time-Based Performance
+- Daily PnL aggregation
+- Hour-of-day PnL analysis (UTC)
+- Worst trading hour insight (behavioral analysis)
+
+
+## Behavioral Insights
+- Identification of underperforming trading hours
+- Directional bias detection (Long vs Short)
+- Contextual trade review via journaling
+
+## Trade Journal
 - Per-trade annotations and notes
-- Exportable filtered trade data
+- Tagging system (e.g. breakout, revenge trade, news)
+- Contextual trade summary (PnL + duration)
+- Persistent local storage (no backend)
+- Instant access from the dashboard
 
----
+## Filtering & Exploration
+- Symbol-based filtering
+- Date range filtering
+- Leaderboard-driven symbol exploration
+- Export filtered trade data
 
-## Supported CSV Format
+# Supported CSV Format
+The dashboard accepts CSV files with the following structure:
 
-The dashboard supports CSV files with the following columns:
 
-```csv
+```
 trade_id
 symbol
 side
@@ -74,39 +92,76 @@ exit_price
 size
 fees
 order_type
+
 ```
 
+Time values must be valid ISO timestamps.
+All trades are assumed to be fully closed.
 
 
-# Metrics 
-PnL
-LONG: (exit_price - entry_price) * size
-SHORT: (entry_price - exit_price) * size
+## Metrics & Calculations
+### PnL
+
+```
+LONG  = (exit_price − entry_price) × size
+SHORT = (entry_price − exit_price) × size
+
 Net PnL = Gross PnL − fees
 
-Drawdown Calculations
-Calculated as the difference between current equity and historical peak equity.
+```
 
-Trade Duration
-close_time − open_time
-
-Profit Factor
-Total winning PnL ÷ total losing PnL
+### Drawdown
+Calculated as the percentage drop from the historical equity peak:
 
 
-# Security & Privacy
-No wallet connection required
-No private keys handled
-No backend or server-side storage
-All calculations performed locally in the browser
-CSV parsing uses strict schema validation
+```
+drawdown = (current_equity − peak_equity) / peak_equity
+```
+
+The maximum drawdown represents the worst observed peak-to-trough decline.
 
 
-# Limitations & Assumptions
-Funding rates and slippage are not included unless present in the CSV
-Each trade is assumed to be fully closed (no partial closes)
-Time-based session analysis uses UTC time
+### Trade Duration
 
-Running Locally
-npm install
-npm run dev
+```
+duration = close_time − open_time
+```
+
+## Worst Trading Hour
+Aggregated PnL by UTC hour to identify the single most unprofitable trading hour, providing actionable behavioral insight.
+
+
+## Security & Privacy
+- No wallet connection required
+- No private keys handled
+- No backend or server-side storage
+- No external API calls
+- All computations performed locally
+- CSV parsing uses strict schema validation
+- Your data never leaves your browser.
+
+
+
+## Limitations & Assumptions
+- Funding rates and slippage are not included unless present in the CSV
+- Partial closes are not supported (each trade is assumed fully closed)
+- Time-based analysis uses UTC
+- Designed for analytics & journaling, not live trading
+
+
+## Tech Stack
+- Next.js / React
+- TypeScript
+- Tailwind CSS
+- Recharts
+- Client-side CSV parsing
+- LocalStorage persistence
+
+## Final Notes
+- Deriverse Trading Analytics focuses on what matters most to active traders:
+- clarity
+- correctness
+- risk awareness
+- behavioral improvement
+
+It is designed to be fast, transparent, and secure, while remaining flexible enough to extend into on-chain or  backend-powered analytics in the future.
