@@ -176,3 +176,13 @@ Aggregated PnL by UTC hour to identify the single most unprofitable trading hour
 - behavioral improvement
 
 It is designed to be fast, transparent, and secure, while remaining flexible enough to extend into on-chain or  backend-powered analytics in the future.
+
+
+##  Future / Planned Improvements
+- Volume & fee analysis (fee composition + cumulative fees)
+- Average trade duration (requires open/close timestamps consistently)
+- Long/Short ratio + directional bias breakdown
+- Session-based analytics (Asia/Europe/US sessions)
+- Export filtered trades (CSV)
+- Partial close support
+- Funding/slippage modeling (if provided in data)
