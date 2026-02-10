@@ -2,26 +2,35 @@ import type { Trade } from "./types";
 
 export type Metrics = {
   tradeCount: number;
-  winRate: number;         // 0..1
+  winRate: number;          // 0..1
   totalPnl: number;
   totalFees: number;
-  grossPnl: number;        // pnl + fees (ako fees oduzimamo)
+  grossPnl: number;         // pnl + fees (ako fees oduzimamo)
   avgWin: number;
-  avgLoss: number;         // negative number
+  avgLoss: number;          // negative number
   largestWin: number;
-  largestLoss: number;     // negative number
+  largestLoss: number;      // negative number
   avgDurationMinutes: number;
+
   longCount: number;
   shortCount: number;
-  longShortRatio: number;  // longCount/shortCount (Infinity if short=0)
+  longShortRatio: number;   // longCount / shortCount (Infinity if short=0)
+  longPnl: number;
+  shortPnl: number;
 };
 
 function calcPnl(t: Trade): number {
   if (typeof t.realizedPnl === "number") return t.realizedPnl;
+
   const direction = t.side === "LONG" ? 1 : -1;
-  // basic: (exit-entry) * size * direction - fees
-  return (t.exitPrice - t.entryPrice) * t.size * direction - (t.fees ?? 0);
+  return (
+    (t.exitPrice - t.entryPrice) *
+      t.size *
+      direction -
+    (t.fees ?? 0)
+  );
 }
+
 export function pnlForTrade(t: Trade): number {
   return calcPnl(t);
 }
@@ -35,6 +44,7 @@ function durationMinutes(t: Trade): number {
 
 export function computeMetrics(trades: Trade[]): Metrics {
   const tradeCount = trades.length;
+
   if (tradeCount === 0) {
     return {
       tradeCount: 0,
@@ -50,6 +60,8 @@ export function computeMetrics(trades: Trade[]): Metrics {
       longCount: 0,
       shortCount: 0,
       longShortRatio: 0,
+      longPnl: 0,
+      shortPnl: 0,
     };
   }
 
@@ -63,18 +75,30 @@ export function computeMetrics(trades: Trade[]): Metrics {
   const grossPnl = totalPnl + fees;
 
   const winRate = wins.length / tradeCount;
-  const avgWin = wins.length ? wins.reduce((s, p) => s + p, 0) / wins.length : 0;
-  const avgLoss = losses.length ? losses.reduce((s, p) => s + p, 0) / losses.length : 0;
+  const avgWin =
+    wins.length > 0 ? wins.reduce((s, p) => s + p, 0) / wins.length : 0;
+  const avgLoss =
+    losses.length > 0
+      ? losses.reduce((s, p) => s + p, 0) / losses.length
+      : 0;
 
-  const largestWin = wins.length ? Math.max(...wins) : 0;
-  const largestLoss = losses.length ? Math.min(...losses) : 0;
+  const largestWin = wins.length > 0 ? Math.max(...wins) : 0;
+  const largestLoss = losses.length > 0 ? Math.min(...losses) : 0;
 
   const avgDurationMinutes =
     trades.reduce((s, t) => s + durationMinutes(t), 0) / tradeCount;
 
-  const longCount = trades.filter((t) => t.side === "LONG").length;
-  const shortCount = trades.filter((t) => t.side === "SHORT").length;
-  const longShortRatio = shortCount === 0 ? Infinity : longCount / shortCount;
+  const longTrades = trades.filter((t) => t.side === "LONG");
+  const shortTrades = trades.filter((t) => t.side === "SHORT");
+
+  const longCount = longTrades.length;
+  const shortCount = shortTrades.length;
+
+  const longPnl = longTrades.reduce((s, t) => s + calcPnl(t), 0);
+  const shortPnl = shortTrades.reduce((s, t) => s + calcPnl(t), 0);
+
+  const longShortRatio =
+    shortCount === 0 ? Infinity : longCount / shortCount;
 
   return {
     tradeCount,
@@ -90,5 +114,7 @@ export function computeMetrics(trades: Trade[]): Metrics {
     longCount,
     shortCount,
     longShortRatio,
+    longPnl,
+    shortPnl,
   };
 }

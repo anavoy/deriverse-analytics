@@ -1,6 +1,12 @@
 import type { Metrics } from "@/lib/metrics";
 
-export default function MetricsGrid({ metrics }: { metrics: Metrics }) {
+export default function MetricsGrid({
+  metrics,
+  maxDrawdown,
+}: {
+  metrics: Metrics;
+  maxDrawdown: number;
+}) {
   const items = [
     {
       label: "Trades",
@@ -16,6 +22,14 @@ export default function MetricsGrid({ metrics }: { metrics: Metrics }) {
       value: formatPnl(metrics.totalPnl),
       positive: metrics.totalPnl >= 0,
     },
+
+    // 🟥 MAX DRAWDOWN (NOVO)
+    {
+      label: "Max drawdown",
+      value: maxDrawdown.toFixed(2) + "%",
+      negative: true,
+    },
+
     {
       label: "Fees",
       value: formatPnl(-metrics.totalFees),
@@ -40,6 +54,20 @@ export default function MetricsGrid({ metrics }: { metrics: Metrics }) {
       label: "Largest loss",
       value: formatPnl(metrics.largestLoss),
       negative: true,
+    },
+
+    // 🆕 LONG / SHORT COUNT
+    {
+      label: "Long / Short",
+      value: `${metrics.longCount} / ${metrics.shortCount}`,
+    },
+
+    // 🆕 LONG / SHORT PnL
+    {
+      label: "Long / Short PnL",
+      value: `${formatPnl(metrics.longPnl)} / ${formatPnl(metrics.shortPnl)}`,
+      positive: metrics.longPnl + metrics.shortPnl >= 0,
+      negative: metrics.longPnl + metrics.shortPnl < 0,
     },
   ];
 

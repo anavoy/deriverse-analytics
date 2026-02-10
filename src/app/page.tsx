@@ -1,18 +1,16 @@
 "use client";
+
 import { useState, useMemo } from "react";
 import type { Trade } from "@/lib/types";
 import { computeMetrics } from "@/lib/metrics";
 import { applyFilters, type Filters } from "@/lib/filter";
-import { buildEquityWithDrawdown } from "@/lib/drawdown";
-import DrawdownChart from "@/components/DrawdownChart";
-
-
-
+import { buildEquityWithDrawdown, maxDrawdown } from "@/lib/drawdown";
 
 import UploadCard from "@/components/UploadCard";
 import FiltersBar from "@/components/FiltersBar";
 import MetricsGrid from "@/components/MetricsGrid";
 import EquityChart from "@/components/EquityChart";
+import DrawdownChart from "@/components/DrawdownChart";
 import PnlByDayChart from "@/components/PnlByDayChart";
 import PnlByHourChart from "@/components/PnlByHourChart";
 import LeaderboardTable from "@/components/LeaderboardTable";
@@ -23,34 +21,35 @@ import DownloadButtons from "@/components/DownloadButtons";
 export default function DashboardLayoutSkeleton() {
   const [trades, setTrades] = useState<Trade[]>([]);
 
-
   const [filters, setFilters] = useState<Filters>({
-  symbol: "ALL",
-  from: "",
-  to: "",
-});
+    symbol: "ALL",
+    from: "",
+    to: "",
+  });
 
-const filteredTrades = useMemo(
-  () => applyFilters(trades, filters),
-  [trades, filters]
-);
+  const filteredTrades = useMemo(
+    () => applyFilters(trades, filters),
+    [trades, filters],
+  );
 
-  const metrics = useMemo(() => {
-    return computeMetrics(filteredTrades);
-  }, [filteredTrades]);
+  const metrics = useMemo(
+    () => computeMetrics(filteredTrades),
+    [filteredTrades],
+  );
 
   const equityWithDrawdown = useMemo(
-  () => buildEquityWithDrawdown(filteredTrades),
-  [filteredTrades]
-);
+    () => buildEquityWithDrawdown(filteredTrades),
+    [filteredTrades],
+  );
 
+  const maxDD = useMemo(
+    () => maxDrawdown(equityWithDrawdown),
+    [equityWithDrawdown],
+  );
 
-
-const handleSymbolClick = (symbol: string) => {
-  setFilters((f) => ({ ...f, symbol }));
-};
-
-
+  const handleSymbolClick = (symbol: string) => {
+    setFilters((f) => ({ ...f, symbol }));
+  };
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
@@ -75,10 +74,7 @@ const handleSymbolClick = (symbol: string) => {
 
           <div className="flex flex-wrap items-center gap-2">
             <DownloadButtons trades={filteredTrades} />
-
-            <JournalDrawer trades={filteredTrades}
- />
-
+            <JournalDrawer trades={filteredTrades} />
           </div>
         </div>
 
@@ -88,7 +84,6 @@ const handleSymbolClick = (symbol: string) => {
           <section className="col-span-12 lg:col-span-4">
             <Card title="Upload trades" subtitle="CSV import">
               <UploadCard onUpload={setTrades} />
-
             </Card>
           </section>
 
@@ -96,11 +91,10 @@ const handleSymbolClick = (symbol: string) => {
           <section className="col-span-12 lg:col-span-8">
             <Card title="Filters" subtitle="Symbol + date range">
               <FiltersBar
-            trades={trades}
-            filters={filters}
-            onChange={setFilters}
-          />
-
+                trades={trades}
+                filters={filters}
+                onChange={setFilters}
+              />
             </Card>
           </section>
 
@@ -108,84 +102,77 @@ const handleSymbolClick = (symbol: string) => {
           <section className="col-span-12">
             <Card
               title="Key metrics"
-              subtitle="Win rate, total PnL, fees, avg win/loss, duration…"
+              subtitle="Win rate, PnL, fees, long/short, drawdown…"
               noPadding
             >
               <div className="p-4">
-                <MetricsGrid metrics={metrics} />
-
+                <MetricsGrid metrics={metrics} maxDrawdown={maxDD} />
               </div>
             </Card>
           </section>
 
-          {/* Equity big */}
-<section className="col-span-12">
-  <Card
-    title="Equity curve"
-    subtitle="Cumulative PnL + peak + drawdown"
-    noPadding
-  >
-    <div className="h-[420px] flex flex-col">
-      {/* Equity */}
-      <div className="flex-1">
-        <EquityChart trades={filteredTrades} />
-      </div>
+          {/* Equity + Drawdown */}
+          <section className="col-span-12">
+            <Card
+              title="Equity curve"
+              subtitle="Cumulative PnL, peaks and drawdown"
+              noPadding
+            >
+              <div className="h-[420px] flex flex-col">
+                <div className="flex-1">
+                  <EquityChart trades={filteredTrades} />
+                </div>
 
-      {/* Drawdown */}
-      <div className="h-[120px] mt-2">
-        <DrawdownChart data={equityWithDrawdown} />
-      </div>
-    </div>
-  </Card>
-</section>
+                <div className="h-[120px] mt-2">
+                  <DrawdownChart data={equityWithDrawdown} />
+                </div>
+              </div>
+            </Card>
+          </section>
 
-
-          {/* Two small charts */}
+          {/* Charts */}
           <section className="col-span-12 lg:col-span-6">
             <Card title="PnL by day" subtitle="Daily aggregation" noPadding>
               <div className="h-[260px] p-2 sm:h-[300px] sm:p-4">
-                <PnlByDayChart trades={filteredTrades}
- />
-
+                <PnlByDayChart trades={filteredTrades} />
               </div>
             </Card>
           </section>
 
           <section className="col-span-12 lg:col-span-6">
-            <Card title="PnL by hour (UTC)" subtitle="Hourly aggregation" noPadding>
+            <Card
+              title="PnL by hour (UTC)"
+              subtitle="Hourly aggregation"
+              noPadding
+            >
               <div className="h-[260px] p-2 sm:h-[300px] sm:p-4">
-               <PnlByHourChart trades={filteredTrades}
- />
-
+                <PnlByHourChart trades={filteredTrades} />
               </div>
             </Card>
           </section>
 
           {/* Tables */}
           <section className="col-span-12 lg:col-span-7">
-            <Card title="Symbol leaderboard" subtitle="Total PnL, win rate, avg PnL">
-             <LeaderboardTable
-  trades={filteredTrades}
-  onSymbolClick={handleSymbolClick}
-/>
-
-
+            <Card title="Symbol leaderboard" subtitle="PnL and win rate">
+              <LeaderboardTable
+                trades={filteredTrades}
+                onSymbolClick={handleSymbolClick}
+              />
             </Card>
           </section>
 
           <section className="col-span-12 lg:col-span-5">
-            <Card title="Order type performance" subtitle="Market/Limit/unknown…">
-             <OrderTypeTable trades={filteredTrades}
- />
-
+            <Card title="Order type performance" subtitle="Market / Limit">
+              <OrderTypeTable trades={filteredTrades} />
             </Card>
           </section>
 
-          {/* Footer note */}
+          {/* Footer */}
           <section className="col-span-12">
             <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-neutral-300 sm:flex-row sm:items-center sm:justify-between">
               <span>
-                Tip: Use filters to isolate symbols & date ranges before drawing conclusions.
+                Tip: Use filters to isolate symbols & date ranges before drawing
+                conclusions.
               </span>
               <span className="text-neutral-500">
                 v0.1 • local-only • no backend
@@ -219,8 +206,6 @@ function Card({
             <div className="text-xs text-neutral-400">{subtitle}</div>
           ) : null}
         </div>
-
-        {/* slot for small actions if needed */}
         <div className="text-xs text-neutral-500" />
       </div>
 

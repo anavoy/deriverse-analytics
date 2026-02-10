@@ -35,3 +35,7 @@ export function buildEquityWithDrawdown(trades: Trade[]): EquityPoint[] {
       };
     });
 }
+export function maxDrawdown(points: EquityPoint[]): number {
+  if (!points.length) return 0;
+  return Math.min(...points.map((p) => p.drawdown));
+}
